@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notchly</title>
+  <meta name="description" content="Notchly turns your Mac's notch into a living island for music, AirDrop and Claude Code.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- SVG symbols reused across the page -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.3" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.3" fill="currentColor"/></symbol>
+      <symbol id="i-fwd" viewBox="0 0 24 24"><path d="M3 7.2v9.6a.8.8 0 0 0 1.25.66L11 12.66a.8.8 0 0 0 0-1.32L4.25 6.54A.8.8 0 0 0 3 7.2Zm9.5 0v9.6a.8.8 0 0 0 1.25.66l6.75-4.8a.8.8 0 0 0 0-1.32l-6.75-4.8a.8.8 0 0 0-1.25.66Z" fill="currentColor"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><g transform="matrix(-1 0 0 1 24 0)"><path d="M3 7.2v9.6a.8.8 0 0 0 1.25.66L11 12.66a.8.8 0 0 0 0-1.32L4.25 6.54A.8.8 0 0 0 3 7.2Zm9.5 0v9.6a.8.8 0 0 0 1.25.66l6.75-4.8a.8.8 0 0 0 0-1.32l-6.75-4.8a.8.8 0 0 0-1.25.66Z" fill="currentColor"/></g></symbol>
+      <symbol id="i-note" viewBox="0 0 24 24"><path d="M9 18.5a3 3 0 1 1-2-2.83V6.2a1 1 0 0 1 .76-.97l10-2.5A1 1 0 0 1 19 3.7v12.8a3 3 0 1 1-2-2.83V8.03l-8 2V18.5Z" fill="currentColor"/></symbol>
+      <symbol id="i-airdrop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M8.5 16.5a5 5 0 1 1 7 0"/><path d="M5.6 19.4a9 9 0 1 1 12.8 0"/></g></symbol>
+      <symbol id="i-open" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></g></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></g></symbol>
+      <symbol id="i-burst" viewBox="0 0 24 24"><g fill="currentColor"><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(45 12 12)"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(90 12 12)"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(135 12 12)"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(180 12 12)"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(225 12 12)"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(270 12 12)"/><rect x="10.4" y="1.5" width="3.2" height="10.5" rx="1.6" transform="rotate(315 12 12)"/></g></symbol>
+    </defs>
+  </svg>
+
+  <!-- ============ Nav ============ -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="Notchly home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        Notchly
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#story">Overview</a>
+        <a href="#music">Music</a>
+        <a href="#airdrop">AirDrop</a>
+        <a href="#claude">Claude Code</a>
+      </nav>
+      <a class="btn btn-small" href="downloads/Notchly.dmg" download>Download</a>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============ Hero ============ -->
+    <section class="hero" id="hero">
+      <div class="hero-copy">
+        <p class="eyebrow fade-up" style="--d:0ms">Notchly for Mac</p>
+        <h1 class="hero-title fade-up" style="--d:120ms">Your notch,<br><span class="gradient-text">now alive.</span></h1>
+        <p class="hero-sub fade-up" style="--d:240ms">Music, AirDrop and Claude Code — living right where the camera sits. Hover to open, glance to know.</p>
+        <div class="hero-cta fade-up" style="--d:360ms">
+          <a class="btn btn-large" href="downloads/Notchly.dmg" download>
+            <svg class="btn-icon"><use href="#i-download"/></svg>
+            Download for Mac
+          </a>
+          <a class="link-arrow" href="#story">See how it works <span aria-hidden="true">›</span></a>
+        </div>
+        <p class="fineprint fade-up" style="--d:440ms">Version 1.0 · macOS 12 Monterey or later · Apple silicon</p>
+      </div>
+
+      <div class="device fade-up" style="--d:520ms" id="hero-device">
+        <div class="screen">
+          <div class="wallpaper" aria-hidden="true"></div>
+          <div class="menubar" aria-hidden="true">
+            <span class="menubar-left"><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span></span>
+            <span class="menubar-right"><span class="mb-icon"></span><span class="mb-clock" data-clock>9:41</span></span>
+          </div>
+          <div class="notch-wrap">
+            <div class="notch" id="hero-notch" data-state="idle" aria-label="Notchly preview. Hover to expand.">
+              <!-- panes are filled from the shared template by main.js -->
+            </div>
+          </div>
+          <p class="hover-hint" id="hover-hint">Hover the notch</p>
+        </div>
+        <div class="device-base" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- ============ Scroll story ============ -->
+    <section class="story" id="story" aria-label="What the notch can show">
+      <div class="story-sticky">
+        <div class="story-head">
+          <p class="eyebrow">One notch. Everything at a glance.</p>
+        </div>
+        <div class="device device-story">
+          <div class="screen">
+            <div class="wallpaper wallpaper-2" aria-hidden="true"></div>
+            <div class="menubar" aria-hidden="true">
+              <span class="menubar-left"><b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span></span>
+              <span class="menubar-right"><span class="mb-icon"></span><span class="mb-clock" data-clock>9:41</span></span>
+            </div>
+            <div class="notch-wrap">
+              <div class="notch" id="story-notch" data-state="music-compact"></div>
+            </div>
+          </div>
+        </div>
+        <div class="story-captions" aria-live="polite">
+          <div class="story-caption is-active" data-state="music-compact">
+            <h3>Playing, quietly.</h3>
+            <p>A tiny pill with artwork and a mascot that bops along — and rests when you pause.</p>
+          </div>
+          <div class="story-caption" data-state="music-expanded">
+            <h3>Hover for the whole player.</h3>
+            <p>Title, artist and controls on Liquid Glass. Every app that plays shows up — even several at once.</p>
+          </div>
+          <div class="story-caption" data-state="agent-compact">
+            <h3>Claude, at a glance.</h3>
+            <p>See what every Claude Code session is doing right now, with a live timer for the turn.</p>
+          </div>
+          <div class="story-caption" data-state="permission">
+            <h3>Approve without switching.</h3>
+            <p>Permission requests open in the notch. Allow, deny, or jump straight to the right terminal tab.</p>
+          </div>
+          <div class="story-caption" data-state="done">
+            <h3>Know when it's done.</h3>
+            <p>A finished turn pops open with its summary, then gets out of your way.</p>
+          </div>
+          <div class="story-caption" data-state="airdrop">
+            <h3>Drag anywhere. Drop on the notch.</h3>
+            <p>Start dragging files and the notch opens up to meet you — let go, and AirDrop takes it from there.</p>
+          </div>
+        </div>
+        <div class="story-progress" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Feature: Music ============ -->
+    <section class="feature" id="music">
+      <div class="feature-copy reveal">
+        <p class="eyebrow eyebrow-music">Music</p>
+        <h2>Every player.<br>One place.</h2>
+        <p>Apple Music, Spotify, a video in Safari or Chrome — Notchly finds whatever's playing and gives each its own row and controls. The list stays in order, so nothing jumps around under your cursor.</p>
+      </div>
+      <div class="scene-card reveal" style="--d:120ms">
+        <div class="scene" data-lottie="notchy_onboarding_music"></div>
+      </div>
+      <ul class="feature-points">
+        <li class="reveal"><strong>Glance</strong><span>Artwork and a listening mascot in the collapsed notch.</span></li>
+        <li class="reveal" style="--d:80ms"><strong>Control</strong><span>Play, pause and skip — or ±15s for videos and podcasts.</span></li>
+        <li class="reveal" style="--d:160ms"><strong>Jump</strong><span>Tap any row to bring that app forward.</span></li>
+      </ul>
+    </section>
+
+    <!-- ============ Feature: AirDrop ============ -->
+    <section class="feature" id="airdrop">
+      <div class="feature-copy reveal">
+        <p class="eyebrow eyebrow-airdrop">AirDrop</p>
+        <h2>Drop it<br>on the notch.</h2>
+        <p>Start dragging from Finder, the Desktop or Mail and the notch opens into a drop zone before you even get there. Prefer to gather first? Fill the AirDrop shelf, review the thumbnails, and send it all at once.</p>
+      </div>
+      <div class="scene-card scene-card-airdrop reveal" style="--d:120ms">
+        <div class="scene" data-lottie="notchy_onboarding_airdrop"></div>
+      </div>
+      <ul class="feature-points">
+        <li class="reveal"><strong>Quick drop</strong><span>Let go and the AirDrop picker opens straight away.</span></li>
+        <li class="reveal" style="--d:80ms"><strong>Shelf</strong><span>Collect files with QuickLook previews and a total size.</span></li>
+        <li class="reveal" style="--d:160ms"><strong>Native</strong><span>Uses macOS's own AirDrop — nothing leaves your Mac any other way.</span></li>
+      </ul>
+    </section>
+
+    <!-- ============ Feature: Claude ============ -->
+    <section class="feature" id="claude">
+      <div class="feature-copy reveal">
+        <p class="eyebrow eyebrow-claude">Claude Code</p>
+        <h2>Your agents,<br>in plain sight.</h2>
+        <p>Connect Claude Code once and every session — in any terminal or editor — reports in. Follow progress, approve tool calls and answer Claude's questions right from the notch.</p>
+      </div>
+      <div class="scene-card scene-card-claude reveal" style="--d:120ms">
+        <div class="scene" data-lottie="notchy_onboarding_claude"></div>
+      </div>
+      <ul class="feature-points">
+        <li class="reveal"><strong>Every session</strong><span>Several projects and terminals at once, each with a live status.</span></li>
+        <li class="reveal" style="--d:80ms"><strong>Answer in place</strong><span>Allow, deny, always allow — or pick an answer to Claude's question.</span></li>
+        <li class="reveal" style="--d:160ms"><strong>Right tab</strong><span>Jumps to the exact Terminal, iTerm2 or VS Code window it came from.</span></li>
+      </ul>
+    </section>
+
+    <!-- ============ Mascots ============ -->
+    <section class="mascots" id="notchy">
+      <div class="section-head reveal">
+        <p class="eyebrow">Meet Notchy</p>
+        <h2>A little character<br>for every moment.</h2>
+      </div>
+      <div class="mascot-grid">
+        <figure class="mascot reveal"><div class="mascot-art" data-lottie="notchy_claude_thinking"></div><figcaption>Thinking</figcaption></figure>
+        <figure class="mascot reveal" style="--d:60ms"><div class="mascot-art" data-lottie="notchy_claude_working"></div><figcaption>Working</figcaption></figure>
+        <figure class="mascot reveal" style="--d:120ms"><div class="mascot-art" data-lottie="notchy_claude_permission"></div><figcaption>Needs permission</figcaption></figure>
+        <figure class="mascot reveal" style="--d:180ms"><div class="mascot-art" data-lottie="notchy_claude_question"></div><figcaption>Has a question</figcaption></figure>
+        <figure class="mascot reveal"><div class="mascot-art" data-lottie="MusicListening"></div><figcaption>Listening</figcaption></figure>
+        <figure class="mascot reveal" style="--d:60ms"><div class="mascot-art" data-lottie="MusicIdle"></div><figcaption>Paused</figcaption></figure>
+        <figure class="mascot reveal" style="--d:120ms"><div class="mascot-art" data-lottie="AirDropSending"></div><figcaption>Sending</figcaption></figure>
+        <figure class="mascot reveal" style="--d:180ms"><div class="mascot-art" data-lottie="AirDropSuccess" data-replay="2600"></div><figcaption>Delivered</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- ============ Details ============ -->
+    <section class="details">
+      <div class="section-head reveal">
+        <p class="eyebrow">The details</p>
+        <h2>Small touches.<br>Big difference.</h2>
+      </div>
+      <div class="bento">
+        <article class="tile tile-wide reveal">
+          <div class="tile-visual tile-glass" aria-hidden="true"><span></span></div>
+          <h3>Liquid Glass</h3>
+          <p>On macOS 26, expanded cards fade from the black of the camera housing into real Liquid Glass. Earlier versions get a matching translucent blur.</p>
+        </article>
+        <article class="tile reveal" style="--d:80ms">
+          <div class="tile-icon" aria-hidden="true">⌘</div>
+          <h3>Every Mac</h3>
+          <p>No notch? Notchly draws one at the top of your screen, so Mac mini, iMac and Studio users get it too.</p>
+        </article>
+        <article class="tile reveal">
+          <div class="tile-icon" aria-hidden="true">🔒</div>
+          <h3>Stays on your Mac</h3>
+          <p>Claude Code talks to Notchly over a local-only connection. No account, no cloud.</p>
+        </article>
+        <article class="tile reveal" style="--d:80ms">
+          <div class="tile-icon" aria-hidden="true">↩︎</div>
+          <h3>Leaves no trace</h3>
+          <p>Disconnect from the menu bar and Notchly removes only its own hooks — your settings are backed up first.</p>
+        </article>
+        <article class="tile tile-wide reveal" style="--d:160ms">
+          <div class="tile-visual tile-tabs" aria-hidden="true">
+            <span class="tab-dot tab-claude"><svg><use href="#i-burst"/></svg></span>
+            <span class="tab-dot is-on"><svg><use href="#i-note"/></svg></span>
+            <span class="tab-dot tab-air"><svg><use href="#i-airdrop"/></svg></span>
+          </div>
+          <h3>Your priority, remembered</h3>
+          <p>Tabs tucked beside the camera let you choose what the notch is about — Claude, Music or AirDrop. Notchly remembers, and only an agent waiting on you can interrupt.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ Download ============ -->
+    <section class="download" id="download">
+      <div class="download-glow" aria-hidden="true"></div>
+      <div class="download-hello reveal" data-lottie="Welcome" data-loop="false" aria-hidden="true"></div>
+      <h2 class="reveal" style="--d:100ms">Say hello to Notchly.</h2>
+      <p class="reveal" style="--d:180ms">Open the disk image and drag Notchly to Applications. That's it.</p>
+      <a class="btn btn-large reveal" style="--d:260ms" href="downloads/Notchly.dmg" download>
+        <svg class="btn-icon"><use href="#i-download"/></svg>
+        Download Notchly
+      </a>
+      <p class="fineprint reveal" style="--d:320ms">Version 1.0 · macOS 12 Monterey or later · Apple silicon</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Notchly. Not affiliated with Apple Inc. or Anthropic.</p>
+  </footer>
+
+  <!-- ============ Notch pane template (cloned into each notch) ============ -->
+  <template id="notch-panes">
+    <div class="notch-bg" aria-hidden="true"><i class="bg-black"></i><i class="bg-glass"></i></div>
+
+    <div class="tabs-ear" aria-hidden="true">
+      <span class="tab-dot tab-claude"><svg><use href="#i-burst"/></svg></span>
+      <span class="tab-dot is-on"><svg><use href="#i-note"/></svg></span>
+      <span class="tab-dot tab-air"><svg><use href="#i-airdrop"/></svg></span>
+    </div>
+
+    <div class="pane pane-hello" data-pane="hello">
+      <div class="hello-art" data-lottie="Hello" data-loop="false" data-speed="1.6"></div>
+      <div class="hello-art is-hidden" data-lottie="Welcome" data-loop="false" data-speed="1.5"></div>
+    </div>
+
+    <div class="pane pane-music-compact" data-pane="music-compact">
+      <div class="mini-mascot" data-lottie="MusicListening"></div>
+      <div class="art art-sm"></div>
+    </div>
+
+    <div class="pane pane-music-expanded" data-pane="music-expanded">
+      <div class="np-row">
+        <div class="art art-lg"><span class="app-badge"></span></div>
+        <div class="np-text">
+          <strong>Midnight City</strong>
+          <span>M83</span>
+        </div>
+        <div class="np-mascot" data-lottie="MusicListening"></div>
+      </div>
+      <div class="np-controls">
+        <span class="glass-btn"><svg><use href="#i-back"/></svg></span>
+        <span class="glass-btn glass-btn-lg"><svg><use href="#i-pause"/></svg></span>
+        <span class="glass-btn"><svg><use href="#i-fwd"/></svg></span>
+      </div>
+    </div>
+
+    <div class="pane pane-agent-compact" data-pane="agent-compact">
+      <div class="ac-top">
+        <div class="mini-mascot" data-lottie="notchy_claude_working"></div>
+        <span class="ac-count">2</span>
+      </div>
+      <div class="ticker">
+        <b>Notchly</b><i>·</i><span>Editing NotchViewModel.swift</span><em data-timer>0:42</em>
+      </div>
+    </div>
+
+    <div class="pane pane-permission" data-pane="permission">
+      <div class="pm-head">
+        <div class="pm-mascot" data-lottie="notchy_claude_permission"></div>
+        <div class="pm-title">
+          <strong>Wants to run a command</strong>
+          <span>Claude · Notchly</span>
+        </div>
+      </div>
+      <code class="pm-detail">xcodebuild -scheme Notchly build</code>
+      <div class="pm-actions">
+        <span class="icon-pill"><svg><use href="#i-open"/></svg></span>
+        <span class="grow"></span>
+        <span class="pill pill-deny">Deny</span>
+        <span class="pill">Always allow</span>
+        <span class="pill pill-primary">Allow</span>
+      </div>
+    </div>
+
+    <div class="pane pane-done" data-pane="done">
+      <div class="done-row">
+        <div class="done-mascot" data-lottie="notchy_claude_done" data-loop="false"></div>
+        <div class="done-text">
+          <strong>Notchly</strong>
+          <span>Done · Fixed the flaky login test</span>
+        </div>
+        <svg class="done-open"><use href="#i-open"/></svg>
+      </div>
+    </div>
+
+    <div class="pane pane-airdrop" data-pane="airdrop">
+      <div class="drop-zone">
+        <div class="drop-hero">
+          <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+          <div class="drop-mascot" data-lottie="AirDropWaiting"></div>
+        </div>
+        <div class="drop-text">
+          <strong>Drop to AirDrop</strong>
+          <span>Hover over the notch and let go</span>
+        </div>
+      </div>
+      <div class="drag-file" aria-hidden="true"><span>PDF</span></div>
+    </div>
+  </template>
+
+  <script src="assets/vendor/lottie.min.js"></script>
+  <script src="assets/lottie-data.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
