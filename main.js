@@ -94,15 +94,16 @@
   const heroNotch = new Notch(document.getElementById("hero-notch"));
   const storyNotch = new Notch(document.getElementById("story-notch"));
 
-  // Scale the notch with its screen so phones see the whole card.
-  function fitNotches() {
+  // The screen's contents are laid out at 960px wide (see .screen-canvas) and
+  // scaled to the actual screen, so phones see a true-to-life miniature.
+  function fitScreens() {
     document.querySelectorAll(".screen").forEach((screen) => {
-      const wrap = screen.querySelector(".notch-wrap");
-      if (wrap) wrap.style.setProperty("--s", clamp(screen.clientWidth / 700, 0.55, 1.25).toFixed(3));
+      const canvas = screen.querySelector(".screen-canvas");
+      if (canvas) canvas.style.setProperty("--k", (screen.clientWidth / 960).toFixed(4));
     });
   }
-  fitNotches();
-  window.addEventListener("resize", fitNotches);
+  fitScreens();
+  window.addEventListener("resize", fitScreens);
 
   // ------------------------------------------------------------ Hero intro
 
@@ -136,8 +137,9 @@
     wrap.addEventListener("mouseleave", () => setTimeout(() => {
       if (!wrap.matches(":hover")) heroNotch.set("music-compact");
     }, 250));
-    // Touch: tap toggles.
-    wrap.addEventListener("click", () => {
+    // Touch: tapping anywhere on the screen toggles — the life-size notch is
+    // too small a target on a phone.
+    wrap.closest(".screen").addEventListener("click", () => {
       heroNotch.set(heroNotch.state === "music-expanded" ? "music-compact" : "music-expanded");
     });
     if (window.matchMedia("(hover: none)").matches) hint.textContent = "Tap the notch";
