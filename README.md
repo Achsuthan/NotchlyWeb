@@ -54,7 +54,7 @@ python3 build-lottie-data.py
 NOTCHLY_PROJECT=/path/to/Notchly ./build-dmg.sh
 ```
 
-The DMG is not notarized, so on other Macs Gatekeeper warns the first time it's opened (right-click → Open). The current build is arm64 only, so the site says "Apple silicon". Update the fine print if you ship a universal build.
+**The published DMG is a notarized, universal (Apple silicon + Intel) build made outside this repo.** `build-dmg.sh` makes a quick local build that is *not* notarized and is arm64 only, so don't use it to replace a release DMG: it would bring back Gatekeeper warnings and drop Intel support (and the site's "Apple silicon & Intel" fine print would then be wrong).
 
 **Add a scroll-story step:**
 1. Add a `.story-caption` with a `data-state` in `index.html`.

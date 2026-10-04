@@ -6,8 +6,9 @@
 #   NOTCHLY_PROJECT=/path/to/Notchly ./build-dmg.sh
 #
 # The app is signed with whatever identity the Xcode project uses but is NOT
-# notarized, so on other Macs Gatekeeper will warn on first open
-# (right-click → Open). Notarize before distributing publicly.
+# notarized, and is built for this Mac's architecture only. For local
+# testing only: the published DMG is a notarized universal build — don't
+# overwrite it with this one.
 set -euo pipefail
 
 SITE_DIR="$(cd "$(dirname "$0")" && pwd)"
