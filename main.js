@@ -94,19 +94,31 @@
 
   // ----------------------------------------------------------------- Notchy
 
-  // A small take on the app's HomeMascot: a hello (wave / yawn / peek /
-  // juggle, or the morning/evening greeting) that hands over to a calm rest
-  // loop; asleep at night; pokes get a giggle, a spin or hearts.
+  // A small take on the app's HomeMascot: a random activity (played once)
+  // that hands over to a fidgety idle loop, with a new activity every ~10s;
+  // asleep at night; pokes get a giggle, a spin or hearts. The site carries
+  // a curated subset of the app's activities to keep the page light.
   const TAPS = ["notchy_home_tap_giggle", "notchy_home_tap_spin", "notchy_home_tap_hearts"];
+  // Mostly the plain idle; sometimes a look around or a happy bounce.
+  const IDLES = ["notchy_home_idle", "notchy_home_idle", "notchy_home_idle_look", "notchy_home_idle_bounce"];
+  const ACTIVITIES = [
+    "notchy_home_wave", "notchy_home_yawn", "notchy_home_peek", "notchy_home_juggle",
+    "notchy_home_dance", "notchy_home_guitar", "notchy_home_kite", "notchy_home_magic",
+    "notchy_home_paint", "notchy_home_read",
+  ];
+  const ACTIVITY_EVERY = 10000;
 
   function isNight(hour = new Date().getHours()) { return hour >= 22 || hour < 5; }
 
-  function hellosForNow() {
+  /** Same time-of-day rules as the app: the greeting is the likeliest pick,
+   *  coffee is morning-only and stargazing an after-dark one. */
+  function activitiesForNow() {
     const hour = new Date().getHours();
-    const hellos = ["notchy_home_wave", "notchy_home_yawn", "notchy_home_peek", "notchy_home_juggle"];
-    if (hour >= 5 && hour < 12) hellos.push("notchy_home_morning", "notchy_home_morning");
-    if (hour >= 17 && hour < 22) hellos.push("notchy_home_evening", "notchy_home_evening");
-    return hellos;
+    const pool = [...ACTIVITIES];
+    if (hour >= 5 && hour < 11) pool.push("notchy_home_morning", "notchy_home_morning", "notchy_home_coffee");
+    if (hour >= 17 && hour < 22) pool.push("notchy_home_evening", "notchy_home_evening");
+    if (hour >= 19 || hour < 5) pool.push("notchy_home_stargaze");
+    return pool;
   }
 
   class Buddy {
@@ -136,13 +148,29 @@
       anim.addEventListener("complete", () => { if (this.name === name) then(); });
     }
 
-    rest() { this.phase = "rest"; this.load("notchy_home_rest", true); }
+    idle() {
+      this.phase = "idle";
+      this.idleSince = Date.now();
+      this.load(pick(IDLES), true);
+    }
+
     sleep() { this.phase = "sleep"; this.load("notchy_home_sleep", true); }
 
     hello() {
       if (isNight()) return this.sleep();
-      this.phase = "hello";
-      this.once(pick(hellosForNow()), () => this.rest());
+      this.activity();
+    }
+
+    activity() {
+      this.phase = "activity";
+      const options = activitiesForNow().filter((name) => name !== this.lastActivity);
+      this.lastActivity = pick(options);
+      this.once(this.lastActivity, () => this.idle());
+    }
+
+    /** Called on a timer while visible: a new activity after a calm spell. */
+    tick() {
+      if (this.phase === "idle" && motionOK && Date.now() - this.idleSince >= ACTIVITY_EVERY) this.activity();
     }
 
     poke() {
@@ -150,18 +178,21 @@
       if (this.phase === "sleep") {
         this.phase = "tap";
         Sound.play("notchy_home_wake");
-        return this.once("notchy_home_wake", () => this.rest());
+        return this.once("notchy_home_wake", () => this.idle());
       }
       this.phase = "tap";
       const tap = pick(TAPS.filter((t) => t !== this.lastTap));
       this.lastTap = tap;
       Sound.play(tap);
-      this.once(tap, () => this.rest());
+      this.once(tap, () => this.idle());
     }
 
-    pause() { if (this.anim) this.anim.pause(); }
-    resume() { if (this.anim && motionOK) this.anim.play(); }
+    pause() { this.paused = true; if (this.anim) this.anim.pause(); }
+    resume() { this.paused = false; if (this.anim && motionOK) this.anim.play(); }
   }
+
+  const buddies = [];
+  setInterval(() => buddies.forEach((b) => !b.paused && b.tick()), 1000);
 
   // ----------------------------------------------------------------- Notch
 
@@ -173,6 +204,7 @@
       el.appendChild(template.content.cloneNode(true));
       const buddyEl = el.querySelector("[data-buddy]");
       this.buddy = new Buddy(buddyEl);
+      buddies.push(this.buddy);
       el.querySelector(".home-mascot").addEventListener("click", (event) => {
         event.stopPropagation(); // don't also toggle the notch on touch
         this.buddy.poke();
@@ -193,7 +225,7 @@
       this.el.classList.toggle("is-glass", GLASS_STATES.has(state));
 
       if (previous) previous.querySelectorAll("[data-lottie]").forEach(pause);
-      if (state === "home") this.buddy.hello();
+      if (state === "home") { this.buddy.paused = false; this.buddy.hello(); }
       else this.buddy.pause();
       const current = this.pane(state);
       if (current && state !== "hello") {
@@ -348,12 +380,15 @@
   // ------------------------------------------------------- Meet Notchy section
 
   const bigBuddy = new Buddy(document.querySelector("#buddy [data-buddy]"));
+  bigBuddy.paused = true;
+  buddies.push(bigBuddy);
   document.getElementById("buddy").addEventListener("click", () => bigBuddy.poke());
   let bigBuddyStarted = false;
   new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting) return bigBuddy.pause();
     if (bigBuddyStarted) return bigBuddy.resume();
     bigBuddyStarted = true;
+    bigBuddy.paused = false;
     bigBuddy.hello();
   }, { threshold: 0.3 }).observe(document.getElementById("buddy"));
 

@@ -20,7 +20,7 @@ Every "Download" button links to `downloads/Notchly.dmg`.
 | `styles.css` | All styling. Notch sizes per state are under "The notch" and mirror `NotchViewModel.width/height` in the app. |
 | `main.js` | Hero intro, hover, scroll story, reveal-on-scroll, and Lottie play/pause. |
 | `assets/lottie/*.json` | Animations copied from `Notchly/Resources/`. |
-| `assets/lottie-data.js` | The animations bundled into one script. It's generated; don't edit it by hand. |
+| `assets/lottie-data.js` | The animations bundled into one script. It's generated; don't edit it by hand. Only animations named somewhere in `index.html` or `main.js` are included, so `assets/lottie/` can hold the app's full set. |
 | `assets/sounds/*.m4a` | The app's mascot sounds, converted from WAV to AAC to keep them small. They only play when a visitor clicks something. |
 | `assets/vendor/lottie.min.js` | lottie-web 5.12.2, vendored so the page works offline. |
 | `downloads/Notchly.dmg` | The app download. |
