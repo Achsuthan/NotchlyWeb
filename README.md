@@ -21,6 +21,7 @@ Every "Download" button links to `downloads/Notchly.dmg`.
 | `main.js` | Hero intro, hover, scroll story, reveal-on-scroll, and Lottie play/pause. |
 | `assets/lottie/*.json` | Animations copied from `Notchly/Resources/`. |
 | `assets/lottie-data.js` | The animations bundled into one script. It's generated; don't edit it by hand. |
+| `assets/sounds/*.m4a` | The app's mascot sounds, converted from WAV to AAC to keep them small. They only play when a visitor clicks something. |
 | `assets/vendor/lottie.min.js` | lottie-web 5.12.2, vendored so the page works offline. |
 | `downloads/Notchly.dmg` | The app download. |
 
@@ -36,6 +37,15 @@ Reference it from any element with `data-lottie="<file name without .json>"`. Th
 - `data-loop="false"` plays it once.
 - `data-speed="1.5"` changes the playback speed.
 - `data-replay="2600"` re-runs a one-shot animation every 2.6 s while it's on screen.
+
+**Refresh animations and sounds from the app** after it gains new ones:
+
+```sh
+R=~/Desktop/Notchly/Notchly/Resources
+find "$R" -name "*.json" -exec cp {} assets/lottie/ \;
+for f in $(find "$R" -name "*.wav"); do afconvert -f m4af -d aac -b 64000 "$f" "assets/sounds/$(basename "${f%.wav}").m4a"; done
+python3 build-lottie-data.py
+```
 
 **Rebuild the DMG** after changing the app:
 

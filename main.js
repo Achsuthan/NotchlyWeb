@@ -8,25 +8,26 @@
 
   const LOTTIE = window.NOTCHLY_LOTTIE || {};
   const motionOK = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const GLASS_STATES = new Set(["music-expanded", "permission", "done", "airdrop"]);
+  const GLASS_STATES = new Set(["music-expanded", "permission", "done", "airdrop", "home", "transfers"]);
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
+  // lottie-web mutates animationData, and several elements share one file.
+  const cloneData = (name) => JSON.parse(JSON.stringify(LOTTIE[name]));
 
   // ---------------------------------------------------------------- Lottie
 
   /** Creates (once) and returns the animation for a [data-lottie] element. */
   function mount(el) {
     if (el._anim) return el._anim;
-    const data = LOTTIE[el.dataset.lottie];
-    if (!data || !window.lottie) return null;
+    if (!LOTTIE[el.dataset.lottie] || !window.lottie) return null;
     el._anim = window.lottie.loadAnimation({
       container: el,
       renderer: "svg",
       loop: el.dataset.loop !== "false",
       autoplay: false,
-      // lottie-web mutates animationData, and several elements share one file.
-      animationData: JSON.parse(JSON.stringify(data)),
+      animationData: cloneData(el.dataset.lottie),
       rendererSettings: { preserveAspectRatio: "xMidYMid meet" },
     });
     if (el.dataset.speed) el._anim.setSpeed(parseFloat(el.dataset.speed));
@@ -60,6 +61,108 @@
     });
   }
 
+  // ---------------------------------------------------------------- Sounds
+
+  // The app's mascot sounds (assets/sounds, AAC). They only ever play in
+  // response to a click, and the toggle is remembered per visitor.
+  const Sound = {
+    enabled: true,
+    cache: {},
+    init() {
+      try { this.enabled = localStorage.getItem("notchly-sound") !== "off"; } catch (_) { /* private mode */ }
+      const button = document.getElementById("sound-toggle");
+      const sync = () => {
+        button.setAttribute("aria-pressed", String(this.enabled));
+        button.querySelector("span").textContent = this.enabled ? "Sound on" : "Sound off";
+      };
+      button.addEventListener("click", () => {
+        this.enabled = !this.enabled;
+        try { localStorage.setItem("notchly-sound", this.enabled ? "on" : "off"); } catch (_) { /* ignore */ }
+        sync();
+      });
+      sync();
+    },
+    play(name) {
+      if (!this.enabled) return;
+      const audio = this.cache[name] || (this.cache[name] = new Audio(`assets/sounds/${name}.m4a`));
+      audio.volume = 0.6;
+      audio.currentTime = 0;
+      audio.play().catch(() => { /* blocked or missing: stay silent */ });
+    },
+  };
+  Sound.init();
+
+  // ----------------------------------------------------------------- Notchy
+
+  // A small take on the app's HomeMascot: a hello (wave / yawn / peek /
+  // juggle, or the morning/evening greeting) that hands over to a calm rest
+  // loop; asleep at night; pokes get a giggle, a spin or hearts.
+  const TAPS = ["notchy_home_tap_giggle", "notchy_home_tap_spin", "notchy_home_tap_hearts"];
+
+  function isNight(hour = new Date().getHours()) { return hour >= 22 || hour < 5; }
+
+  function hellosForNow() {
+    const hour = new Date().getHours();
+    const hellos = ["notchy_home_wave", "notchy_home_yawn", "notchy_home_peek", "notchy_home_juggle"];
+    if (hour >= 5 && hour < 12) hellos.push("notchy_home_morning", "notchy_home_morning");
+    if (hour >= 17 && hour < 22) hellos.push("notchy_home_evening", "notchy_home_evening");
+    return hellos;
+  }
+
+  class Buddy {
+    constructor(el) {
+      this.el = el;
+      this.phase = "none";
+      this.lastTap = null;
+    }
+
+    load(name, loop) {
+      if (this.anim) this.anim.destroy();
+      this.name = name;
+      this.anim = window.lottie.loadAnimation({
+        container: this.el,
+        renderer: "svg",
+        loop,
+        autoplay: motionOK,
+        animationData: cloneData(name),
+      });
+      if (!motionOK) this.anim.goToAndStop(Math.floor(this.anim.totalFrames * 0.5), true);
+      return this.anim;
+    }
+
+    once(name, then) {
+      const anim = this.load(name, false);
+      if (!motionOK) return then();
+      anim.addEventListener("complete", () => { if (this.name === name) then(); });
+    }
+
+    rest() { this.phase = "rest"; this.load("notchy_home_rest", true); }
+    sleep() { this.phase = "sleep"; this.load("notchy_home_sleep", true); }
+
+    hello() {
+      if (isNight()) return this.sleep();
+      this.phase = "hello";
+      this.once(pick(hellosForNow()), () => this.rest());
+    }
+
+    poke() {
+      if (this.phase === "tap") return;
+      if (this.phase === "sleep") {
+        this.phase = "tap";
+        Sound.play("notchy_home_wake");
+        return this.once("notchy_home_wake", () => this.rest());
+      }
+      this.phase = "tap";
+      const tap = pick(TAPS.filter((t) => t !== this.lastTap));
+      this.lastTap = tap;
+      Sound.play(tap);
+      this.once(tap, () => this.rest());
+    }
+
+    pause() { if (this.anim) this.anim.pause(); }
+    resume() { if (this.anim && motionOK) this.anim.play(); }
+  }
+
   // ----------------------------------------------------------------- Notch
 
   const template = document.getElementById("notch-panes");
@@ -68,6 +171,12 @@
     constructor(el) {
       this.el = el;
       el.appendChild(template.content.cloneNode(true));
+      const buddyEl = el.querySelector("[data-buddy]");
+      this.buddy = new Buddy(buddyEl);
+      el.querySelector(".home-mascot").addEventListener("click", (event) => {
+        event.stopPropagation(); // don't also toggle the notch on touch
+        this.buddy.poke();
+      });
       this.state = null;
       this.set(el.dataset.state || "idle");
     }
@@ -84,6 +193,8 @@
       this.el.classList.toggle("is-glass", GLASS_STATES.has(state));
 
       if (previous) previous.querySelectorAll("[data-lottie]").forEach(pause);
+      if (state === "home") this.buddy.hello();
+      else this.buddy.pause();
       const current = this.pane(state);
       if (current && state !== "hello") {
         current.querySelectorAll("[data-lottie]").forEach((el) => play(el, true));
@@ -107,13 +218,13 @@
 
   // ------------------------------------------------------------ Hero intro
 
-  // Mirrors the app's launch: idle notch → "hello" → "welcome" → music pill.
-  // After that, hovering the notch opens the full player, as it does on a Mac.
+  // Mirrors the app's launch: idle notch → "hello" → "welcome" → the quiet
+  // notch (clock + Notchy). Hovering opens the Home page, as on a Mac.
   const hint = document.getElementById("hover-hint");
 
   async function heroIntro() {
     if (!motionOK) {
-      heroNotch.set("music-compact");
+      heroNotch.set("idle-home");
       return enableHeroHover();
     }
     await wait(1100);
@@ -127,20 +238,20 @@
     play(welcomeEl, true);
     await onComplete(welcomeEl);
     await wait(400);
-    heroNotch.set("music-compact");
+    heroNotch.set("idle-home");
     enableHeroHover();
   }
 
   function enableHeroHover() {
     const wrap = heroNotch.el.parentElement;
-    wrap.addEventListener("mouseenter", () => heroNotch.set("music-expanded"));
+    wrap.addEventListener("mouseenter", () => heroNotch.set("home"));
     wrap.addEventListener("mouseleave", () => setTimeout(() => {
-      if (!wrap.matches(":hover")) heroNotch.set("music-compact");
+      if (!wrap.matches(":hover")) heroNotch.set("idle-home");
     }, 250));
     // Touch: tapping anywhere on the screen toggles — the life-size notch is
     // too small a target on a phone.
     wrap.closest(".screen").addEventListener("click", () => {
-      heroNotch.set(heroNotch.state === "music-expanded" ? "music-compact" : "music-expanded");
+      heroNotch.set(heroNotch.state === "home" ? "idle-home" : "home");
     });
     if (window.matchMedia("(hover: none)").matches) hint.textContent = "Tap the notch";
     hint.classList.add("is-visible");
@@ -231,14 +342,55 @@
     const pane = heroNotch.pane(heroNotch.state);
     if (!pane || heroNotch.state === "hello") return;
     pane.querySelectorAll("[data-lottie]").forEach((el) => (entry.isIntersecting ? play(el) : pause(el)));
+    if (heroNotch.state === "home") entry.isIntersecting ? heroNotch.buddy.resume() : heroNotch.buddy.pause();
   }).observe(heroNotch.el);
 
-  // ----------------------------------------------------- Clock + turn timer
+  // ------------------------------------------------------- Meet Notchy section
+
+  const bigBuddy = new Buddy(document.querySelector("#buddy [data-buddy]"));
+  document.getElementById("buddy").addEventListener("click", () => bigBuddy.poke());
+  let bigBuddyStarted = false;
+  new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) return bigBuddy.pause();
+    if (bigBuddyStarted) return bigBuddy.resume();
+    bigBuddyStarted = true;
+    bigBuddy.hello();
+  }, { threshold: 0.3 }).observe(document.getElementById("buddy"));
+
+  // Mood tiles: click to replay the moment with its sound.
+  document.querySelectorAll(".mascot[data-sound]").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      Sound.play(tile.dataset.sound);
+      const art = tile.querySelector("[data-lottie]");
+      if (art) play(art, true);
+    });
+  });
+
+  // ------------------------------------------- Clocks, greeting, live demos
+
+  const uses12h = new Intl.DateTimeFormat([], { hour: "numeric" }).resolvedOptions().hour12 === true;
+
+  function greeting(hour) {
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 17) return "Good afternoon";
+    if (hour >= 17 && hour < 22) return "Good evening";
+    return "Hello, night owl";
+  }
 
   function tickClock() {
     const now = new Date();
-    const text = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    document.querySelectorAll("[data-clock]").forEach((el) => (el.textContent = text));
+    const menu = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    // Like the app: the hour and minutes, with AM/PM as a separate small label.
+    const short = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: uses12h })
+      .replace(/\s?[AP]\.?M\.?$/i, "");
+    const ampm = uses12h ? (now.getHours() < 12 ? "AM" : "PM") : "";
+    const date = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+    const set = (selector, text) => document.querySelectorAll(selector).forEach((el) => (el.textContent = text));
+    set("[data-clock]", menu);
+    set("[data-clock-short], [data-clock-big]", short);
+    set("[data-ampm]", ampm);
+    set("[data-greeting]", greeting(now.getHours()));
+    set("[data-date]", date);
   }
   tickClock();
   setInterval(tickClock, 15000);
@@ -250,4 +402,21 @@
     document.querySelectorAll("[data-timer]").forEach((el) => (el.textContent = text));
   }, 1000);
 
+  // Download rows in the Transfers pane fill up and start over.
+  const TOTAL_MB = 3;
+  setInterval(() => {
+    document.querySelectorAll(".tr-bar i[data-progress]").forEach((bar) => {
+      let value = parseFloat(bar.dataset.progress) + parseFloat(bar.dataset.rate || "0.03");
+      if (value > 1.04) value = 0.04;
+      bar.dataset.progress = String(value);
+      bar.style.width = `${Math.min(value, 1) * 100}%`;
+      const meta = bar.closest(".tr-info").querySelector("[data-progress-meta]");
+      if (meta) {
+        const done = Math.min(value, 1) * TOTAL_MB;
+        meta.textContent = value >= 1
+          ? "Done · Show in Finder"
+          : `${done.toFixed(1)} MB of ${TOTAL_MB} MB · ${Math.max(1, Math.ceil((1 - value) / 0.06))} s left`;
+      }
+    });
+  }, 500);
 })();
